@@ -17,16 +17,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// 1) CONNECT TO MONGODB ATLAS
+// MongoDB connection
 const MONGO_URI =
-  "mongodb+srv://Dhruv0801_db_user:Dhruv%407827@cluster0.dr1brz0.mongodb.net/emsdb?retryWrites=true&w=majority";
+  "mongodb+srv://Dhruv0801_db_user:Dhruv%407827@cluster0.dr1brz0.mongodb.net/emsdb?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("Mongo error:", err));
 
-// 2) DEFINE EMPLOYEE MODEL
+// Schema + model
 const employeeSchema = new mongoose.Schema({
   emp_id: { type: String, required: true, unique: true },
   emp_name: String,
@@ -45,8 +45,6 @@ const employeeSchema = new mongoose.Schema({
 });
 
 const Employee = mongoose.model("Employee", employeeSchema);
-
-// 3) ROUTES
 
 // GET /employees
 app.get("/employees", async (req, res) => {
@@ -101,7 +99,7 @@ app.get("/", (req, res) => {
   res.send("EMS backend with MongoDB is running");
 });
 
-// PORT for Render or local
+// PORT
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
