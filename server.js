@@ -1,52 +1,64 @@
 const express = require("express");
-const { execFile } = require("child_process");
-const path = require("path");
 const app = express();
 
+// Middleware
 app.use(express.json());
 
-// Simple permissive CORS for local development
+// CORS
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
+// In-memory "database" on server
+let employees = [];
+
+// GET /employees
 app.get("/employees", (req, res) => {
-  const exe = path.join(__dirname, "..", process.platform === "win32" ? "employee.exe" : "employee");
-  execFile(exe, ["list"], (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
-    res.type("json").send(stdout);
-  });
+  res.json(employees);
 });
 
+// POST /employees
 app.post("/employees", (req, res) => {
   const e = req.body;
-  const exe = path.join(__dirname, "..", process.platform === "win32" ? "employee.exe" : "employee");
-  execFile(
-    exe,
-    [
-      "add",
-      e.emp_id,
-      e.emp_name,
-      e.emp_dept,
-      e.emp_email,
-      e.emp_phone,
-      e.emp_payroll_id,
-      String(e.emp_salary),
-      String(e.emp_working_days),
-      String(e.emp_leaves),
-      String(e.emp_bonus),
-      String(e.emp_deductions),
-      e.emp_address || "",
-      e.emp_status || "Active"
-    ],
-    (err, stdout, stderr) => {
-      if (err) return res.status(500).json({ error: stderr || err.message });
-      res.json({ message: "OK", output: stdout });
-    }
-  );
+
+  // basic calculation like your C code
+  const salary = Number(e.emp_salary) || 0;
+  const wd = Number(e.emp_working_days) || 0;
+  const bonus = Number(e.emp_bonus) || 0;
+  const ded = Number(e.emp_deductions) || 0;
+  const wages = salary / 26.0;
+  const net = wages * wd + bonus - ded;
+
+  const emp = {
+    emp_id: e.emp_id,
+    emp_name: e.emp_name,
+    emp_dept: e.emp_dept,
+    emp_email: e.emp_email,
+    emp_phone: e.emp_phone,
+    emp_address: e.emp_address || "",
+    emp_payroll_id: e.emp_payroll_id,
+    emp_salary: salary,
+    emp_working_days: wd,
+    emp_leaves: Number(e.emp_leaves) || 0,
+    emp_bonus: bonus,
+    emp_deductions: ded,
+    emp_net_pay: net,
+    emp_status: e.emp_status || "Active"
+  };
+
+  employees.push(emp);
+  res.json({ message: "OK", emp });
 });
 
-app.listen(3000, () => console.log("Server on http://localhost:3000"));
+// Use Render's PORT or 3000 locally
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
