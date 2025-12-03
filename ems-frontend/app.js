@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchInput.addEventListener("input", renderAll);
   }
 
-  // Expose delete function to HTML
+  // Expose delete function globally
   window.deleteEmp = function (id) {
     employees = employees.filter(e => e.emp_id !== id);
     renderAll();
